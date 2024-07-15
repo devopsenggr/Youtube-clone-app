@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: my-app-deployment
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: my-app
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: my-app
-          image: sevenajay/youtube:latest
+          image: awsd43/youtube:latest
           ports:
             - containerPort: 3000  # Your Node.js application should listen on port 3000
 
