@@ -1,0 +1,64 @@
+stages:
+    - npm
+    - sonar
+    - trivy file scan
+    - docker
+    - trivy image scan
+    - run container
+install dependency:
+    stage: npm
+    image:
+        name: node:16    
+    script:
+        - npm install 
+
+sonarqube-check:
+  stage: sonar
+  image: 
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script: 
+    - sonar-scanner
+  allow_failure: true
+  only:
+    - main
+
+Trivy file scan:
+   stage: trivy file scan
+   image: 
+     name: aquasec/trivy:latest
+     entrypoint: [""]
+   script:
+    - trivy fs .
+
+Docker build and push:
+  stage: docker
+  image:
+    name: docker:latest
+  services:
+    - docker:dind 
+  script:
+     - docker build --build-arg REACT_APP_RAPID_API_KEY=8f20ac3545msh024e33cc24ac21ep17dcf8jsn7a418c02ec1e -t youtubev1 .
+     - docker tag youtubev1 awsd43/youtubev1:latest
+     - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+     - docker push awsd43/youtubev1:latest
+scan image:
+   stage: trivy image scan
+   image: 
+     name: aquasec/trivy:latest
+     entrypoint: [""]
+   script:
+    - trivy image awsd43/youtubev1:latest  
+deploy to container:
+   stage: run container
+   tags:
+     - runner
+   script:
+     - docker run -d -p 3000:3000 awsd43/youtubev1:latest 
